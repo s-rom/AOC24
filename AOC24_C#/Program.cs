@@ -1,2 +1,2 @@
 
-Console.WriteLine(Day4.part2());
+Console.WriteLine(Day6.part2());
