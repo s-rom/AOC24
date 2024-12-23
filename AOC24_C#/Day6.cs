@@ -132,7 +132,7 @@ class Grid
         List<GridState[]> list = [];
 
         using StreamReader sr = File.OpenText(inputFile);
-        String line;
+        String? line;
         int columns = 0;
         int rows = 0;
 

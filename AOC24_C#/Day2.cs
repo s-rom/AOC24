@@ -6,27 +6,25 @@ class Day2
 {
 
 
-    private static readonly String inputPath = @"..\..\..\input_2.txt";
+    private static readonly string inputPath = @"..\..\..\input_2.txt";
 
-    private static List<List<int>> parseInput()
+    private static List<List<int>> ParseInput()
     {
 
         var result = new List<List<int>>();
 
-        using (StreamReader sr = File.OpenText(inputPath))
+        using StreamReader sr = File.OpenText(inputPath);
+        string? line;
+        while ( (line = sr.ReadLine()) != null) 
         {
-            String line;
-            while ( (line = sr.ReadLine()) != null) 
-            {
-                var row = line.Split(' ').Select(x => int.Parse(x)).ToList();
-                result.Add(row);
-            }
+            var row = line.Split(' ').Select(x => int.Parse(x)).ToList();
+            result.Add(row);
         }
-
+    
         return result;
     }
 
-    private static bool isDescending(List<int> list) 
+    private static bool IsDescending(List<int> list) 
     {
         for (int i = 0;  i < list.Count - 1; i ++ )
         {
@@ -36,7 +34,7 @@ class Day2
         return true;
     }
 
-    private static bool isAscending(List<int> list) 
+    private static bool IsAscending(List<int> list) 
     {
         for (int i = 0;  i < list.Count - 1; i ++ )
         {
@@ -46,7 +44,7 @@ class Day2
         return true;
     }
 
-    private static bool differsByOneToThree(List<int> list) 
+    private static bool DiffersByOneToThree(List<int> list) 
     {
         for (int i = 0;  i < list.Count - 1; i ++ )
         {
@@ -57,23 +55,23 @@ class Day2
         return true;
     }
 
-    public static int part1()
+    public static int Part1()
     {
-        var reports = parseInput();
+        var reports = ParseInput();
         
         var total = reports
-                        .Where(l => isReportSafe(l))
+                        .Where(l => IsReportSafe(l))
                         .Count();
         return total;
     }
 
 
-    private static bool isReportSafe(List<int> report) 
+    private static bool IsReportSafe(List<int> report) 
     {
-        return (isDescending(report) || isAscending(report)) && differsByOneToThree(report);
+        return (IsDescending(report) || IsAscending(report)) && DiffersByOneToThree(report);
     }
 
-    private static bool tryFixReport(List<int> report) 
+    private static bool TryFixReport(List<int> report) 
     {
         int size = report.Count;
         for (int i = 0; i < size; i++) 
@@ -81,7 +79,7 @@ class Day2
             List<int> testReport = new List<int>(report);
             testReport.RemoveAt(i);
 
-            if (isReportSafe(testReport)) {
+            if (IsReportSafe(testReport)) {
                 return true;
             }  
         }
@@ -89,24 +87,20 @@ class Day2
         return false;
     }
 
-    public static int part2() 
+    public static int Part2() 
     {
-        var reports = parseInput();
+        var reports = ParseInput();
         var safeReports = 0;
 
         foreach (var report in reports) 
         {
-            if (isReportSafe(report) || tryFixReport(report))
+            if (IsReportSafe(report) || TryFixReport(report))
             {
                 safeReports ++;
             } 
         }
         return safeReports;
     }
-
-
-
-
 
 
 }
