@@ -1,10 +1,6 @@
 namespace Day12;
 
-using System.Data;
-using System.Data.SqlTypes;
-using System.Diagnostics.SymbolStore;
-using System.Security.Cryptography.X509Certificates;
-using Day10;
+
 using Raylib_cs;
 
 

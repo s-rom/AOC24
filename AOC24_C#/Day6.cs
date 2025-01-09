@@ -15,72 +15,10 @@ struct GridState
 }
 
 
-struct GridVector
-{
-
-    public static readonly GridVector UP = new(-1, 0);
-    public static readonly GridVector RIGHT = new(0, 1);
-    public static readonly GridVector DOWN = new(+1, 0);
-    public static readonly GridVector LEFT = new(0, -1);
-
-
-
-
-    public GridVector(int row, int col)
-    {
-        this.Row = row;
-        this.Column = col;
-    }
-
-    public void Rotate90ToRight() 
-    {
-        if (this == UP) 
-        {
-            this = RIGHT;
-        }
-        else if (this == RIGHT)
-        {
-            this = DOWN;
-        }
-        else if (this == DOWN)
-        {
-            this = LEFT;
-        }
-        else
-        {
-            this = UP;
-        }
-
-    }
-
-    public override string ToString()
-    {
-        return $"Row {Row}, Column: {Column}";
-    }
-
-    public static bool operator == (GridVector v1, GridVector v2)
-    {
-        return v1.Column == v2.Column && v1.Row == v2.Row;
-    }
-
-    public static bool operator != (GridVector v1, GridVector v2)
-    {
-        return v1.Column != v2.Column || v1.Row != v2.Row;
-    }
-
-    public static GridVector operator +(GridVector v1, GridVector v2) {
-        return new GridVector(v1.Row + v2.Row, v1.Column + v2.Column);
-    }
-
-    public int Row {get; set;}
-    public int Column {get; set;} 
-}
-
-
-class Grid
+class GuardGrid
 {
     
-    public Grid(Grid g) 
+    public GuardGrid(GuardGrid g) 
     {
         this.Rows = g.Rows;
         this.Columns = g.Columns;
@@ -127,7 +65,7 @@ class Grid
 
     private GridState [][] data;
 
-    public Grid(String inputFile) 
+    public GuardGrid(String inputFile) 
     {
         List<GridState[]> list = [];
 
@@ -267,7 +205,7 @@ class Day6
 
     public static int part1() 
     {
-        Grid grid = new Grid(inputFile);
+        GuardGrid grid = new GuardGrid(inputFile);
         while(grid.NextMovement());
         return grid.TotalVisited;
     
@@ -275,7 +213,7 @@ class Day6
 
     public static int part2() 
     {
-        Grid grid = new Grid(inputFile);
+        GuardGrid grid = new GuardGrid(inputFile);
 
         var result = 0;
 
@@ -283,7 +221,7 @@ class Day6
         {
             for (int c = 0; c < grid.Columns; c++) {
 
-                Grid gridCopy = new Grid(grid);
+                GuardGrid gridCopy = new GuardGrid(grid);
                 var pos = new GridVector(r, c);
 
                 if (pos == gridCopy.StartingPlayerPos) continue;
