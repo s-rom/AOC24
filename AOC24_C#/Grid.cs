@@ -21,11 +21,38 @@ class Grid<T>
         Fill(value);
     }
 
+    protected Grid() {}
 
-    protected Grid()
+    public Grid(string inputFile, Func<char, T> parseChar)
     {
+        using StreamReader sr = File.OpenText(inputFile);
+        string? line;
+        
+        List<List<T>> rawData = [];
+        int r = 0;
+        while ((line = sr.ReadLine()) != null)
+        {
+            var column = line.ToCharArray().Select(x => parseChar(x)).ToList();
+            rawData.Add(column);
+            r ++;
+        }
+
+        Rows = r;
+        Columns = rawData[0].Count;
+
+        this.data = new T[Rows, Columns];
+
+        for (int i = 0; i < r; i++)
+        {
+            for (int j = 0; j < Columns; j++)
+            {
+                this.data[i,j] = rawData[i][j];
+            }
+        }
+
 
     }
+
 
     public IEnumerable<GridVector> Positions()
     {
@@ -83,6 +110,21 @@ class Grid<T>
         }
     }
 
+
+    public GridVector? FirstPositionOf(T value)
+    {
+        for (int r = 0; r < Rows; r++)
+        {
+            for (int c = 0; c < Columns; c++)
+            {
+                if (data[r,c].Equals(value)) 
+                    return new(r, c);
+            }
+        }
+
+
+        return null;
+    }
 
 
     public T ElementAt(GridVector v)
