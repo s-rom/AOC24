@@ -319,13 +319,14 @@ abstract class Robot
             }
         }
    
+        PruneHighTurnsPaths(ref paths);
         shortestPathsCache.Add(combination, paths);
         return paths;
    
     }
 
 
-    private static int CountTurnsInPath(ref string path)
+    private static int CountTurnsInPath(string path)
     {
         char last = ' ';
         int turns = 0;
@@ -343,11 +344,28 @@ abstract class Robot
     {
         if (paths.Count < 2) return;
 
+
         List<int> turns = [];
+        int minTurns = int.MaxValue;
         foreach (var path in paths)
         {
-            // TODO
+            var pathTurns = CountTurnsInPath(path);
+            turns.Add(pathTurns);
+            if (pathTurns < minTurns)
+            {
+                minTurns = pathTurns;
+            }
         }
+
+        for (int i = 0; i < paths.Count; i++)
+        {
+            if (turns[i] > minTurns)
+            {
+                paths.RemoveAt(i);
+            }
+        }
+
+
     }
 
     private IEnumerable<GridVector> AdjacentNodes(GridVector pos)
@@ -394,9 +412,9 @@ class Day21
 {
 
 
-    public static string GetRequiredInputsStr(string inputs, NumpadRobot numpad, List<DirectionalRobot> directionals, int depth)
+    public static long GetRequiredInputsStr(string inputs, NumpadRobot numpad, List<DirectionalRobot> directionals, int depth)
     {
-        string total = "";
+        long total = 0;
 
         int directionalIdx = depth - 1;
         bool isLastController = (depth == directionals.Count);
@@ -421,16 +439,16 @@ class Day21
                 */
                 if (allShortestPaths.Count == 0) 
                 {
-                    total += "A";
+                    total += 1;
                 }
                 else
                 {
-                    total += allShortestPaths.First();
+                    total += allShortestPaths.First().Length;
                 }
             }
             else
             {
-                List<string> possibleInputs = [];
+                List<long> possibleInputs = [];
                 foreach (var path in currentRobot.AllShortestPathsToButton(button))
                 {
                     var inputLength = GetRequiredInputsStr(path, numpad, directionals, depth+1);
@@ -438,10 +456,12 @@ class Day21
                 }
 
 
-                var chosenPath = possibleInputs.
-                    Aggregate((min, current) => current.Length < min.Length ? 
-                                                current :
-                                                min);
+                var chosenPath = possibleInputs.Min();
+
+                // var chosenPath = possibleInputs.
+                //     Aggregate((min, current) => current.Length < min.Length ? 
+                //                                 current :
+                //                                 min);
                 
                 total += chosenPath;
             }
@@ -455,7 +475,7 @@ class Day21
     public static long Part1()
     { 
       
-        var numberOfDirectionals = 2;
+        var numberOfDirectionals = 25;
         var numpadRobot = new NumpadRobot();
         List<DirectionalRobot> directionalRobots = [];
 
@@ -470,7 +490,7 @@ class Day21
         foreach (var code in codes)
         {
             var codeValue = int.Parse(code.Substring(0, code.Length - 1));
-            result += codeValue * GetRequiredInputsStr(code, numpadRobot, directionalRobots, 0).Length;
+            result += codeValue * GetRequiredInputsStr(code, numpadRobot, directionalRobots, 0);
         }
         return result;
     }
