@@ -5,7 +5,7 @@ public enum Opcode
     ADV = 0,
     BXL = 1,
     BST = 2,
-    JNZ = 3,
+    JNZ = 3,    
     BXC = 4,
     OUT = 5,
     BDV = 6,

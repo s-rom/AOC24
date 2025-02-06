@@ -1,0 +1,19 @@
+=> brwrr 
+
+b   [rwrr] --> Check if remainder can be created
+br  [wrr]  --> Check if remainder can be created
+
+
+    => rwrr 
+    r   [wrr] --> Check if remainder can be created
+
+        => wrr 
+
+            wr [r] --> Check if remainder can be created
+
+    => wrr 
+
+    wr [r] --> Check if remainder can be created
+
+
+

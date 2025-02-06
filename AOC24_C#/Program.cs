@@ -5,4 +5,5 @@
 
 // Console.WriteLine(Day16.Day16.Part1And2());
 
-Console.WriteLine(Day20.Day20.Part2());
+
+Console.WriteLine(Day21.Day21.Part1());

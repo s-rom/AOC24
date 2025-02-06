@@ -3,6 +3,8 @@ class Grid<T>
 
     protected T[,] data;
 
+    private Dictionary<GridVector, T>? debugValues = null;
+
     public int Rows {get; protected set;}
     public int Columns {get; protected set;}
 
@@ -83,7 +85,7 @@ class Grid<T>
             v.Column >= 0 && v.Column < Columns;
     }
 
-    protected void Fill(List<List<T>> raw)
+    public void Fill(List<List<T>> raw)
     {
         Rows = raw.Count;
         Columns = raw[0].Count;
@@ -126,6 +128,22 @@ class Grid<T>
         return null;
     }
 
+    public void InsertDebugValues(List<GridVector> positions, T value)
+    {
+        debugValues ??= [];
+        foreach (var pos in positions)
+        {
+            debugValues.Add(pos, value);
+        }
+    }
+
+
+    public void ClearDebugValues()
+    {
+        if (debugValues == null) return;
+
+        debugValues.Clear();
+    }
 
     public T ElementAt(GridVector v)
     {
@@ -154,6 +172,8 @@ class Grid<T>
         }
     }
 
+
+
     public override string ToString()
     {
         var result = "";
@@ -162,7 +182,17 @@ class Grid<T>
         {
             for (int c = 0; c < Columns; c++)
             {
-                result += data[r,c];
+
+                GridVector pos = new(r, c);
+                    
+                if (debugValues != null && debugValues.TryGetValue(pos, out T? value))
+                {
+                    result += value;
+                }
+                else 
+                {
+                    result += data[r,c];
+                }
             }
             result += "\n";
         }
