@@ -1,6 +1,8 @@
-using System.Security.Permissions;
+using System.Runtime.InteropServices;
+using AOC24;
 
 namespace Day21;
+
 
 
 class NumpadRobot : Robot
@@ -224,27 +226,26 @@ abstract class Robot
         return output;
     }
 
-    public IEnumerable<string> AllShortestPathsToButton(char number)
+    public List<string> AllShortestPathsToButton(char number)
     {
         GridVector target = buttonPositions[number];
 
+
         if (position == target)
         {
-            yield return "";
-            yield break;
+            return ["A"];
         }
 
 
         char currentButton = buttons.ElementAt(position);
         char targetButton = number;
 
-        if (shortestPathsCache.ContainsKey((currentButton, targetButton)))
-        {
-            foreach (var path in shortestPathsCache[(currentButton, targetButton)])
-                yield return path;
-                yield break;
-        }
+        var combination = (currentButton, targetButton);
 
+        if (shortestPathsCache.TryGetValue(combination, out List<string>? cachedPaths))
+        {
+            return cachedPaths;
+        }
 
 
         HashSet<GridVector> visited = [];
@@ -291,8 +292,7 @@ abstract class Robot
 
 
         // Find all paths
-
-        shortestPathsCache[(currentButton, targetButton)] = [];
+        List<string> paths = [];
 
         Stack<List<GridVector>> pathQueue = new();
         GridVector start = this.position;
@@ -307,9 +307,7 @@ abstract class Robot
                 // found path
                 currentPath.RemoveAt(currentPath.Count - 1);
                 var stringPath = PathToStringReversed(currentPath);
-                shortestPathsCache[(currentButton, targetButton)].Add(stringPath);
-                
-                yield return stringPath;
+                paths.Add(stringPath+"A");
                 continue;
             }
             
@@ -319,6 +317,36 @@ abstract class Robot
                 newPath.Add(parentNode);
                 pathQueue.Push(newPath);
             }
+        }
+   
+        shortestPathsCache.Add(combination, paths);
+        return paths;
+   
+    }
+
+
+    private static int CountTurnsInPath(ref string path)
+    {
+        char last = ' ';
+        int turns = 0;
+
+        foreach (var input in path)
+        {
+            if (input != 'A' && input != last) turns++;
+            last = input;
+        }
+
+        return turns;
+    }
+
+    private static void PruneHighTurnsPaths(ref List<string> paths)
+    {
+        if (paths.Count < 2) return;
+
+        List<int> turns = [];
+        foreach (var path in paths)
+        {
+            // TODO
         }
     }
 
@@ -365,93 +393,86 @@ abstract class Robot
 class Day21
 {
 
-    public static string Test(List<DirectionalRobot> robots, string inputs, int depth = 0)
+
+    public static string GetRequiredInputsStr(string inputs, NumpadRobot numpad, List<DirectionalRobot> directionals, int depth)
     {
+        string total = "";
 
-        int maxDepth = robots.Count;
-        if (depth == maxDepth) return "";
+        int directionalIdx = depth - 1;
+        bool isLastController = (depth == directionals.Count);
+        
+        Robot currentRobot;
+        if (depth == 0)
+            currentRobot = numpad;
+        else
+            currentRobot = directionals[directionalIdx];
 
-        string shortestRequiredInput = "";
+
         foreach (var button in inputs)
         {
-            // To achieve this button several shortest paths are available
-            // For each possible input in path, check the inputs required at next input
-            // and pick the shortest one
+            var allShortestPaths = currentRobot.AllShortestPathsToButton(button);
+        
+            if (isLastController)
+            {
+                /*
+                    The robot arm is already pointing at the target button
+                    Just press A
+                        => Add 1 to the total inputs required
+                */
+                if (allShortestPaths.Count == 0) 
+                {
+                    total += "A";
+                }
+                else
+                {
+                    total += allShortestPaths.First();
+                }
+            }
+            else
+            {
+                List<string> possibleInputs = [];
+                foreach (var path in currentRobot.AllShortestPathsToButton(button))
+                {
+                    var inputLength = GetRequiredInputsStr(path, numpad, directionals, depth+1);
+                    possibleInputs.Add(inputLength);
+                }
 
-            Console.WriteLine($"--- {button} ---");
-            var nextPath = robots[depth].AllShortestPathsToButton(button).ToList().First() + "A";
-            Console.WriteLine($"\t " + nextPath);
 
-            shortestRequiredInput +=  nextPath;
+                var chosenPath = possibleInputs.
+                    Aggregate((min, current) => current.Length < min.Length ? 
+                                                current :
+                                                min);
                 
-            
-            robots[depth].MoveArm(button);
-        }
+                total += chosenPath;
+            }
 
-        return shortestRequiredInput;
+            currentRobot.MoveArm(button);
+        }
+        return total;
     }
+
 
     public static long Part1()
     { 
       
-        // v<<A>>^A<A>AvA<^AA>A<vAAA>^A
+        var numberOfDirectionals = 2;
+        var numpadRobot = new NumpadRobot();
+        List<DirectionalRobot> directionalRobots = [];
 
-        List<DirectionalRobot> robots = [];
-        robots.AddRange(Enumerable.Repeat(new DirectionalRobot(), 2));
-        
-        NumpadRobot numpadRobot = new();
+        using StreamReader sr = File.OpenText(@"..\..\..\input_21.txt");
 
+        var codes = sr.ReadToEnd().Split("\r\n");
+        for (var i = 0; i < numberOfDirectionals; i++)
+            directionalRobots.Add(new DirectionalRobot());
 
+        long result = 0;
 
-        // Populate shortest paths cache
-
-        foreach (var n in "0123456789A")
+        foreach (var code in codes)
         {
-            foreach (var m in "0123456789A")
-            {
-                numpadRobot.MoveArm(m);
-                numpadRobot.AllShortestPathsToButton(n).ToList();
-            }
+            var codeValue = int.Parse(code.Substring(0, code.Length - 1));
+            result += codeValue * GetRequiredInputsStr(code, numpadRobot, directionalRobots, 0).Length;
         }
-
-        numpadRobot.MoveArm('A');
-
-
-        string result = "";
-
-        foreach (var num in "029A")
-        {
-            var pathTobutton = numpadRobot.AllShortestPathsToButton(num).ToList().First();
-            result += Test(robots, pathTobutton + "A", 0);
-            
-            numpadRobot.MoveArm(num);
-        }
-
-        Console.WriteLine(result);
-
-        // var code = "029A";
-
-        // NumpadRobot numpadRobot = new();
-        // DirectionalRobot directionalRobot = new();
-
-
-        // foreach (var num in code)
-        // {
-        //     Console.WriteLine($"---- {num} ----");
-        //     foreach (var path in numpadRobot.AllShortestPathsToButton(num))
-        //     {
-        //         Console.WriteLine(path + "A");
-        //         directionalRobot.TestDirectional(path + "A");
-        //     }
-
-        //     numpadRobot.MoveArm(num);
-
-        //     Console.WriteLine();
-        // }
-
-
-
-        return 0;
+        return result;
     }
 
     

@@ -14,7 +14,7 @@ struct Vector2<T> where T: INumber<T>
         this.Y = y;
     }
 
-    public override string ToString()
+    public override readonly string ToString()
     {
         return $"X {X}, Y: {Y}";
     }
