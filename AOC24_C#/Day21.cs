@@ -1,16 +1,13 @@
-using System.Runtime.InteropServices;
 using AOC24;
-
 namespace Day21;
 
 
 
 class NumpadRobot : Robot
 {
-    public NumpadRobot()
+    public NumpadRobot() : base(4, 3)
     {
-        var numpadButtons = new Grid<char>(4, 3);
-        numpadButtons.Fill(
+        this.InitButtons(
             [
                 ['7', '8', '9'],
                 ['4', '5', '6'],
@@ -18,141 +15,61 @@ class NumpadRobot : Robot
                 [EMPTY, '0', 'A']
             ]
         );
-
-        this.InitButtons(numpadButtons);
+        PrecomputePaths();
     }
 }
 
 
 class DirectionalRobot: Robot
 {
-
-    private static readonly Dictionary<char, char> invertedInput = new()
+    public DirectionalRobot(): base(2,3)
     {
-        {'>', '<'},
-        {'<', '>'},
-        {'^', 'v'},
-        {'v', '^'}
-    };
-
-    public DirectionalRobot()
-    {
-        var directionalButtons = new Grid<char>(2, 3);
-        directionalButtons.Fill(
+        this.InitButtons(
             [
                 [EMPTY, '^',  'A'],
                 ['<',   'v',  '>'],
-            ]
+            ] 
         );
 
-        this.InitButtons(directionalButtons);
     }
-
-
-    /*
-
-        +---+---+---+
-        | 7 | 8 | 9 |
-        +---+---+---+
-        | 4 | 5 | 6 |
-        +---+---+---+
-        | 1 | 2 | 3 |
-        +---+---+---+
-            | 0 | A |
-            +---+---+
-
-
-            +---+---+
-            | ^ | A |
-        +---+---+---+
-        | < | v | > |
-        +---+---+---+
-
-
-    */
-
-    public void TestDirectional(string inputs)
-    {
-        foreach (var input in inputs)
-        {
-            Console.WriteLine($"\t -- {input} --");
-            foreach (var possiblePath in this.AllShortestPathsToButton(input))
-            {
-                if (possiblePath != "A")
-                    Console.WriteLine("\t" + possiblePath + "A");
-            }
-
-            this.MoveArm(input);
-        }
-
-    }
-
-
-
-    /*
-        OLD VERSION
-
-    */
-    private string ExecuteRequiredInputs(string inputs)
-    {
-        string result = "";
-
-        foreach (var input in inputs)
-        {
-            // Go to button
-            var directInputs = AllShortestPathsToButton(input);
-            result += directInputs;             
-            MoveArm(input);
-            result += 'A';
-        }
-
-        // Return to A
-        result += AllShortestPathsToButton('A');
-        MoveArm('A');
-        return result + 'A';
-    }
-
-    public string InvertPath(string path)
-    {
-        string inverted = "";
-        foreach (var input in path)
-        {
-            inverted += invertedInput[input];
-        }
-        return inverted;
-    }
-
 
 }
 
 
 
 
-abstract class Robot
+abstract class Robot(int rows, int columns)
 {
     protected static readonly char EMPTY = ' ';
 
-    protected GridVector position;
+    public GridVector Position { get; protected set; }
 
-    protected Dictionary<char, GridVector> buttonPositions;
+    protected Dictionary<char, GridVector> buttonPositions = [];
 
-    protected Dictionary<(char, char), List<string>> shortestPathsCache = [];
+    public Dictionary<(char, char), List<string>> ShortestPathsCache {get; set;} = [];
 
-    protected Grid<char> buttons;  
+    protected Grid<char> buttons = new(rows, columns);  
 
-    protected void InitButtons(Grid<char> buttons)
+    public void PrecomputePaths()
     {
-        this.buttons = buttons;
-        var buttonAPosition = buttons.FirstPositionOf('A');
-        if (buttonAPosition.HasValue)
+        foreach (var from in this.buttons.Values())
         {
-            position = buttonAPosition.Value;
-        }
-        else
-        {
-            throw new Exception("A button not found");
+            foreach  (var to in this.buttons.Values())
+            {
+                if (from == EMPTY || to == EMPTY) continue;
+
+                this.MoveArm(from);
+                AllShortestPathsToButton(to);
+            }
         }
 
+        this.MoveArm('A');
+    }
+
+    protected void InitButtons(List<List<char>> newButtons)
+    {
+        buttons.Fill(newButtons);
+        
         buttonPositions = [];
         for (int r = 0; r < buttons.Rows; r++)
         {
@@ -161,6 +78,16 @@ abstract class Robot
                 var pos = new GridVector(r, c);
                 buttonPositions.Add(buttons.ElementAt(pos), pos);
             }
+        }
+        
+        var buttonAPosition = buttons.FirstPositionOf('A');
+        if (buttonAPosition.HasValue)
+        {
+            Position = buttonAPosition.Value;
+        }
+        else
+        {
+            throw new Exception("A button not found");
         }
     }
 
@@ -180,7 +107,7 @@ abstract class Robot
     {
         if (buttons.IsInBounds(position) && !(buttons.ElementAt(position) == EMPTY))
         {
-            this.position = position;
+            this.Position = position;
         }
         else 
         {
@@ -206,7 +133,7 @@ abstract class Robot
     {
         string inputs = "";
         path.Reverse();
-        GridVector currentPos = this.position;
+        GridVector currentPos = this.Position;
         foreach (var p in path)
         {
             GridVector dir = p - currentPos;
@@ -215,8 +142,6 @@ abstract class Robot
         }
 
         return inputs;
-
-        // return new string([.. InputsString(path).Reverse()]);
     }
 
     public static string InputsString(List<GridVector> inputs)
@@ -231,18 +156,18 @@ abstract class Robot
         GridVector target = buttonPositions[number];
 
 
-        if (position == target)
+        if (Position == target)
         {
             return ["A"];
         }
 
 
-        char currentButton = buttons.ElementAt(position);
+        char currentButton = buttons.ElementAt(Position);
         char targetButton = number;
 
         var combination = (currentButton, targetButton);
 
-        if (shortestPathsCache.TryGetValue(combination, out List<string>? cachedPaths))
+        if (ShortestPathsCache.TryGetValue(combination, out List<string>? cachedPaths))
         {
             return cachedPaths;
         }
@@ -261,8 +186,8 @@ abstract class Robot
 
 
         // Add current position     
-        queue.Enqueue(position);
-        distance[position] = 0;
+        queue.Enqueue(Position);
+        distance[Position] = 0;
 
         while (queue.Count > 0)
         {
@@ -295,7 +220,7 @@ abstract class Robot
         List<string> paths = [];
 
         Stack<List<GridVector>> pathQueue = new();
-        GridVector start = this.position;
+        GridVector start = this.Position;
         pathQueue.Push([buttonPositions[number]]);
         while (pathQueue.Count != 0)
         {
@@ -320,7 +245,7 @@ abstract class Robot
         }
    
         PruneHighTurnsPaths(ref paths);
-        shortestPathsCache.Add(combination, paths);
+        ShortestPathsCache.Add(combination, paths);
         return paths;
    
     }
@@ -404,28 +329,19 @@ abstract class Robot
 */
 
 
-
-
-
-
 class Day21
 {
 
+    /* (depth, path) => pathLength */
+    private static readonly Dictionary<(int, string), long> cache = [];
 
-    public static long GetRequiredInputsStr(string inputs, NumpadRobot numpad, List<DirectionalRobot> directionals, int depth)
+    public static long GetRequiredInputs(string inputs, List<Robot> directionals, int depth)
     {
         long total = 0;
 
-        int directionalIdx = depth - 1;
-        bool isLastController = (depth == directionals.Count);
+        bool isLastController = (depth == directionals.Count-1);        
+        Robot currentRobot = directionals[depth];
         
-        Robot currentRobot;
-        if (depth == 0)
-            currentRobot = numpad;
-        else
-            currentRobot = directionals[directionalIdx];
-
-
         foreach (var button in inputs)
         {
             var allShortestPaths = currentRobot.AllShortestPathsToButton(button);
@@ -449,20 +365,19 @@ class Day21
             else
             {
                 List<long> possibleInputs = [];
+                
                 foreach (var path in currentRobot.AllShortestPathsToButton(button))
                 {
-                    var inputLength = GetRequiredInputsStr(path, numpad, directionals, depth+1);
+
+                    if (!cache.TryGetValue((depth, path), out long inputLength))
+                    {
+                        inputLength = GetRequiredInputs(path, directionals, depth+1);
+                        cache.Add((depth, path), inputLength);
+                    }
                     possibleInputs.Add(inputLength);
                 }
 
-
                 var chosenPath = possibleInputs.Min();
-
-                // var chosenPath = possibleInputs.
-                //     Aggregate((min, current) => current.Length < min.Length ? 
-                //                                 current :
-                //                                 min);
-                
                 total += chosenPath;
             }
 
@@ -472,33 +387,55 @@ class Day21
     }
 
 
-    public static long Part1()
-    { 
-      
-        var numberOfDirectionals = 25;
+    public static long SolveDay21(int numberOfDirectionals)
+    {
         var numpadRobot = new NumpadRobot();
-        List<DirectionalRobot> directionalRobots = [];
+        List<Robot> robots = [numpadRobot];
 
         using StreamReader sr = File.OpenText(@"..\..\..\input_21.txt");
 
         var codes = sr.ReadToEnd().Split("\r\n");
+
+
+        Dictionary<(char, char), List<string>>? pathsCache = null;
         for (var i = 0; i < numberOfDirectionals; i++)
-            directionalRobots.Add(new DirectionalRobot());
+        {
+            var robot = new DirectionalRobot();
+            if (pathsCache == null)
+            {
+                robot.PrecomputePaths();
+                pathsCache = robot.ShortestPathsCache; 
+            }
+            else
+            {
+                robot.ShortestPathsCache = pathsCache;
+            }
+            robots.Add(robot);
+        }
 
         long result = 0;
 
         foreach (var code in codes)
         {
             var codeValue = int.Parse(code.Substring(0, code.Length - 1));
-            result += codeValue * GetRequiredInputsStr(code, numpadRobot, directionalRobots, 0);
+            result += codeValue * GetRequiredInputs(code, robots, 0);
         }
+
+        cache.Clear();
         return result;
+
+    }
+
+
+    public static long Part1()
+    { 
+        return SolveDay21(2);
     }
 
     
     public static long Part2()
     {
-        return 0;
+        return SolveDay21(25);
     }
 
 }
