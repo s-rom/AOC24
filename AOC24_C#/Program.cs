@@ -8,6 +8,6 @@
 
 
 
-Console.WriteLine(Day21.Day21.Part1());
-Console.WriteLine(Day21.Day21.Part2());
+// Console.WriteLine(Day22.Day22.Part1());
+Console.WriteLine(Day22.Day22.Part2());
 
