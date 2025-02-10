@@ -9,5 +9,5 @@
 
 
 // Console.WriteLine(Day22.Day22.Part1());
-Console.WriteLine(Day22.Day22.Part2());
+Console.WriteLine(Day23.Day23.Part1());
 
