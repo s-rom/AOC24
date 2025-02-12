@@ -23,6 +23,8 @@ partial class Operation
     private static partial Regex MyRegex();
 
 
+    public bool Executed {get; private set;}
+
     public string Op1 {get; private set;}
 
     public string Op2 {get; private set;}
@@ -56,6 +58,12 @@ partial class Operation
     }
 
 
+    public bool CanBeSolved(Dictionary<string, bool> variables)
+    {
+        return variables.ContainsKey(Op1) && variables.ContainsKey(Op2);
+    }
+
+
     public void Execute(Dictionary<string, bool> variables)
     {
         switch(this.LogicOperation)
@@ -71,7 +79,13 @@ partial class Operation
             case LogicOp.XOR:
                 variables[Op3] = variables[Op1] ^ variables[Op2];
             break;
+
+            case LogicOp.INVALID:
+                Console.Error.WriteLine("Invalid logical operation found");
+            break;
         }
+
+        Executed = true;
     }
 
     public static bool IsOperation(string opStr)
@@ -112,19 +126,32 @@ class Day24
     public static ulong Part1()
     {
         ParseInput(
-            @"..\..\..\input_24_test.txt",
+            @"..\..\..\input_24.txt",
             out Dictionary<string, bool> variables,
             out List<Operation> operations
         );
 
 
-        foreach (var op in operations)
+        bool operationsSolved = false;
+        while (!operationsSolved)
         {
-            op.Execute(variables);
+            var ops = operations.Where(x => x.CanBeSolved(variables)).ToList();
+            ops.ForEach(x => x.Execute(variables));
+        
+
+            operationsSolved = true;
+            foreach (var op in operations)
+            {
+                if (!op.Executed)
+                {
+                    operationsSolved = false;
+                    continue;
+                }
+            }
+
         }
 
-        
-        
+
         var outputVars = variables
             .Where(x => x.Key.StartsWith('z'))
             .OrderByDescending(x => x.Key)
