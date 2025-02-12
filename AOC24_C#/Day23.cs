@@ -82,7 +82,6 @@ public class Day23
             FindNCycles(computer, 3, [computer]);
         }
     
-        // return 0L;
         return triangles.Count(x => x[0] == 't' || x[2] == 't' || x[4] == 't');
     }
 
