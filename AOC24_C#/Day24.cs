@@ -132,23 +132,13 @@ class Day24
         );
 
 
-        bool operationsSolved = false;
-        while (!operationsSolved)
+
+        int operationsSolved = 0;
+        while (operationsSolved != operations.Count)
         {
-            var ops = operations.Where(x => x.CanBeSolved(variables)).ToList();
+            var ops = operations.Where(x => x.CanBeSolved(variables) && !x.Executed).ToList();
             ops.ForEach(x => x.Execute(variables));
-        
-
-            operationsSolved = true;
-            foreach (var op in operations)
-            {
-                if (!op.Executed)
-                {
-                    operationsSolved = false;
-                    continue;
-                }
-            }
-
+            operationsSolved += ops.Count;
         }
 
 
