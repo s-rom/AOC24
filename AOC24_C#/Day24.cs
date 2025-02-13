@@ -19,7 +19,7 @@ partial class Operation
     private static partial Regex MyRegex();
 
 
-    public bool Executed {get; private set;}
+    public bool Executed {get; set;}
 
     public string Op1 {get; private set;}
 
@@ -216,9 +216,33 @@ class Day24
                                                                                           
     Full adder
 
-   
-
     */
+
+    public static void SetInputBit(Dictionary<string, bool> variables, int idxOfOne)
+    {
+        // idxOfOne ==> Index of the only 1. (0 is rightmost <-> LSB)
+        
+        string xVar, yVar;
+        foreach (var i in Enumerable.Range(0, 44 + 1))
+        {
+            xVar = "x";
+            if (i <= 9) xVar += "0";
+            xVar += i.ToString();
+            yVar = xVar.Replace('x', 'y');
+
+            variables[xVar] = false;
+            variables[yVar] = false;
+        }
+
+        xVar = "x";
+        if (idxOfOne <= 9) xVar += "0";
+        xVar += idxOfOne.ToString();
+        yVar = xVar.Replace('x', 'y');
+
+        variables[xVar] = true;
+        variables[yVar] = true;
+    }
+
 
     public static ulong Part2()
     {
@@ -237,6 +261,15 @@ class Day24
             Cout = AB + (Cin(A XOR B))                                                                    
             
             ----------------------------
+
+            x ^ y = a
+            a ^ cin = z
+
+            x & y = b
+            cin & a = m
+            b | m = cout
+
+
             
             x1 + y1 + c0 = z1, c1
 
@@ -248,44 +281,71 @@ class Day24
                 wqt OR sgv = hqq (c1) 
 
         */
+
+
+        /*
+
+            -- SUM --
+            x XOR y = a
+            a XOR cin = z
+
+            -- COUT --
+            x & y = b
+            cin & a = m
+            b | m = cout
+
+        */
+
         
         operations
-            .Where(x => 
-                    x.ResultIsAnyOf(["z01"]) ||
-                    x.OperandIsAnyOf(["x01", "y01", "tcd", "sgv"])
+            .Where(x => x.ResultIsAnyOf(["z15", "x16"]) 
+                    || x.OperandIsAnyOf(["x15", "y15", "x16", "y16"])
                 )
             .ToList()
             .ForEach(x => Console.WriteLine(x));
 
+        /*
 
-    
-        string xVar, yVar;
 
-        foreach (var i in Enumerable.Range(0, 44 + 1))
+        */
+
+
+        for (int i = 15; i < 17; i++)
         {
-            xVar = "x";
-            if (i <= 9) xVar += "0";
-            xVar += i.ToString();
-            yVar = xVar.Replace('x', 'y');
+            Dictionary<string, bool> newVariables = new(variables);
+            operations.ForEach(x => x.Executed = false);
 
-            variables[xVar] = false;
-            variables[yVar] = false;
+            SetInputBit(newVariables, i);
+            ExecuteInstructions(newVariables, operations);
+
+            ulong x = GetVarAsUlong(newVariables, varName: 'x');
+            ulong y = GetVarAsUlong(newVariables, varName: 'y');
+            ulong z = GetVarAsUlong(newVariables, varName: 'z');
+
+            if (z != x + y)
+            {
+                Console.WriteLine($"z: {z}, i: {i}, x: {x}, y: {y}");
+            }
         }
 
-        // Index of the only bit at one. (0 is rightmost <-> LSB)
-        var idxOfOne = 0;
-        xVar = "x";
-        if (idxOfOne <= 9) xVar += "0";
-        xVar += idxOfOne.ToString();
-        yVar = xVar.Replace('x', 'y');
 
-        variables[xVar] = true;
-        variables[yVar] = true;
-
-
-        ExecuteInstructions(variables, operations);
         
-        return GetVarAsUlong(variables);
+
+
+        // SetInputBit(variables, idxOfOne: 0);
+        // ExecuteInstructions(variables, operations);
+
+        // Console.WriteLine("x: "  + GetVarAsUlong(variables, varName: 'x'));
+        // Console.WriteLine("y: "  + GetVarAsUlong(variables, varName: 'y'));
+
+        // return GetVarAsUlong(variables, varName: 'z');
+
+       
+        return 0L;
+
+        // ExecuteInstructions(variables, operations);
+        
+        // return GetVarAsUlong(variables);
 
     }
 }
