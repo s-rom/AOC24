@@ -1,10 +1,6 @@
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
 namespace Day24;
-
-
 
 enum LogicOp
 {
@@ -92,6 +88,45 @@ partial class Operation
     {
         return pattern.Match(opStr).Success;    
     }
+
+    public bool OperandIs(string str)
+    {
+        return Op1 == str || Op2 == str;
+    }
+
+    public bool OperandIsAnyOf(string[] operands)
+    {
+        foreach (var op in operands)
+        {
+            if (OperandIs(op)) return true;
+        }
+
+        return false;
+    }
+
+
+    public bool ResultIs(string str)
+    {
+        return Op3 == str;
+    }
+
+
+    public bool ResultIsAnyOf(string[] results)
+    {
+        foreach (var op in results)
+        {
+            if (ResultIs(op)) return true;
+        }
+
+        return false;
+    }
+    
+
+
+    public override string ToString()
+    {
+        return $"{Op1} {LogicOperation} {Op2} = {Op3}";
+    }
 }
 
 class Day24
@@ -122,28 +157,10 @@ class Day24
         }
     }
 
-
-    public static ulong Part1()
+    public static ulong GetVarAsUlong(Dictionary<string, bool> variables, char varName = 'z')
     {
-        ParseInput(
-            @"..\..\..\input_24.txt",
-            out Dictionary<string, bool> variables,
-            out List<Operation> operations
-        );
-
-
-
-        int operationsSolved = 0;
-        while (operationsSolved != operations.Count)
-        {
-            var ops = operations.Where(x => x.CanBeSolved(variables) && !x.Executed).ToList();
-            ops.ForEach(x => x.Execute(variables));
-            operationsSolved += ops.Count;
-        }
-
-
         var outputVars = variables
-            .Where(x => x.Key.StartsWith('z'))
+            .Where(x => x.Key.StartsWith(varName))
             .OrderByDescending(x => x.Key)
             .Select(x => x.Value? (ulong)1L: (ulong)0L);
 
@@ -153,9 +170,122 @@ class Day24
             result <<= 1;
             result |= outVar;
         }
-       
+
         return result;
     }
 
+    public static void ExecuteInstructions(Dictionary<string, bool> variables, List<Operation> operations)
+    {
+        int operationsSolved = 0;
+        while (operationsSolved != operations.Count)
+        {
+            var ops = operations.Where(x => x.CanBeSolved(variables) && !x.Executed).ToList();
+            ops.ForEach(x => x.Execute(variables));
+            operationsSolved += ops.Count;
+        }
+    }
+
+
+    public static ulong Part1()
+    {
+        ParseInput(
+            @"..\..\..\input_24.txt",
+            out Dictionary<string, bool> variables,
+            out List<Operation> operations
+        );
+
+        ExecuteInstructions(variables, operations);   
+        return GetVarAsUlong(variables);
+    }
+
     
+
+    /*
+
+                                                                                           
+             |         |            |         |             |         |                   
+             |A2       |B2          |A1       |B1           |A0       |B0                 
+             |         |            |         |             |         |                   
+             V         V            V         V             V         V                   
+            --------------         --------------          --------------                 
+      Cout  |            |   Cout  |            |    Cout  |            |    Cin          
+   <--------|   1 Bit    |<--------|   1 Bit    | <--------|   1 Bit    | <--------       
+            |    adder   |         |    adder   |          |    adder   |                 
+            |            |         |            |          |            |                 
+            --------------         --------------          --------------                 
+                                                                                          
+    Full adder
+
+   
+
+    */
+
+    public static ulong Part2()
+    {
+
+        ParseInput(
+            @"..\..\..\input_24.txt",
+            out Dictionary<string, bool> variables,
+            out List<Operation> operations
+        );
+
+        /*
+            X(44b) + Y(44b) = Z(45b)
+            ----------------------------
+
+            SUM  = A XOR B XOR Cin
+            Cout = AB + (Cin(A XOR B))                                                                    
+            
+            ----------------------------
+            
+            x1 + y1 + c0 = z1, c1
+
+                x1 XOR y1 = tcd
+                tcd XOR bwv = z1
+
+                x1 and y1 = wqt
+                bwv AND tcd = sgv
+                wqt OR sgv = hqq (c1) 
+
+        */
+        
+        operations
+            .Where(x => 
+                    x.ResultIsAnyOf(["z01"]) ||
+                    x.OperandIsAnyOf(["x01", "y01", "tcd", "sgv"])
+                )
+            .ToList()
+            .ForEach(x => Console.WriteLine(x));
+
+
+    
+        string xVar, yVar;
+
+        foreach (var i in Enumerable.Range(0, 44 + 1))
+        {
+            xVar = "x";
+            if (i <= 9) xVar += "0";
+            xVar += i.ToString();
+            yVar = xVar.Replace('x', 'y');
+
+            variables[xVar] = false;
+            variables[yVar] = false;
+        }
+
+        // Index of the only bit at one. (0 is rightmost <-> LSB)
+        var idxOfOne = 0;
+        xVar = "x";
+        if (idxOfOne <= 9) xVar += "0";
+        xVar += idxOfOne.ToString();
+        yVar = xVar.Replace('x', 'y');
+
+        variables[xVar] = true;
+        variables[yVar] = true;
+
+
+        ExecuteInstructions(variables, operations);
+        
+        return GetVarAsUlong(variables);
+
+    }
 }
