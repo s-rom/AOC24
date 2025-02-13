@@ -91,10 +91,10 @@ partial class Operation
 
     public bool OperandIs(string str)
     {
-        return Op1 == str || Op2 == str;
+        return Op1.Equals(str) || Op2.Equals(str);
     }
 
-    public bool OperandIsAnyOf(string[] operands)
+    public bool OperandIsAnyOf(List<string> operands)
     {
         foreach (var op in operands)
         {
@@ -107,11 +107,11 @@ partial class Operation
 
     public bool ResultIs(string str)
     {
-        return Op3 == str;
+        return Op3.Equals(str);
     }
 
 
-    public bool ResultIsAnyOf(string[] results)
+    public bool ResultIsAnyOf(List<string> results)
     {
         foreach (var op in results)
         {
@@ -243,6 +243,93 @@ class Day24
         variables[yVar] = true;
     }
 
+    public static Dictionary<string, Operation?>? GetAdderOperations(List<Operation> operations, int bit)
+    {
+        var bitStr = "" + bit;
+        if (bit <= 9) bitStr = "0" + bitStr;
+
+        Dictionary<string, Operation?>? expressions = [];
+        Dictionary<string, Predicate<Operation>> simpleTests = new()
+        {
+            {"a", x => x.OperandIs("x"+bitStr) && x.LogicOperation == LogicOp.XOR},
+            {"b", x => x.OperandIs("x"+bitStr) && x.LogicOperation == LogicOp.AND},
+            {"z", x => x.ResultIs("z"+bitStr)},
+        };
+
+        // x and y = b
+        // x xor y = a
+        // a xor cin = z
+
+        // cin & a = m
+        // b | m = cout
+    
+        foreach (var test in simpleTests.Keys)
+        {
+            var expression = operations.Find(simpleTests[test]);
+            if (expression == null)
+            {
+                Console.Error.WriteLine($"{test} expression not found!");
+                return null;
+            }
+            else 
+            {
+                expressions[test] = expression; 
+            }
+        }
+
+        var bName = expressions["b"]!.Op3; 
+        var aName = expressions["a"]!.Op3;
+
+        expressions["m"] = operations.Find(x => x.OperandIs(aName) && x.LogicOperation == LogicOp.AND);    
+        expressions["cout"] = operations.Find(x => x.OperandIs(bName) && x.LogicOperation == LogicOp.OR);
+
+
+        return expressions;
+    }
+
+
+    public static bool IsValidAdder(Dictionary<string, Operation?> adderExpressions, int bit)
+    {
+
+        foreach (var key in adderExpressions.Keys)
+            if (adderExpressions[key] == null) return false;
+        
+        var bitStr = "" + bit;
+        if (bit <= 9) bitStr = "0" + bitStr;
+
+
+        var xName = "x"+bitStr;
+        var yName = "y"+bitStr;
+        
+        var aExpr = adderExpressions["a"];
+        var aName = aExpr!.Op3;
+
+        var bExpr = adderExpressions["b"];
+        var bName = bExpr!.Op3;
+
+        var mExpr = adderExpressions["m"];
+        var mName = mExpr!.Op3;
+
+        var coutExpr = adderExpressions["cout"];
+
+        var zExpr = adderExpressions["z"];
+
+        // x and y = b
+        // x xor y = a
+        // a xor cin = z
+
+        // cin & a = m
+        // b | m = cout
+
+        bool testB = bExpr!.OperandIs(xName) && bExpr!.OperandIs(yName) && bExpr!.LogicOperation == LogicOp.AND;
+        bool testA = aExpr!.OperandIs(xName) && aExpr!.OperandIs(yName) && aExpr!.LogicOperation == LogicOp.XOR;
+        bool testZ = zExpr!.OperandIs(aName) && zExpr!.LogicOperation == LogicOp.XOR;
+        bool testM = mExpr!.OperandIs(aName) && mExpr!.LogicOperation == LogicOp.AND;
+        bool testCout = coutExpr!.OperandIs(bName) && coutExpr!.OperandIs(mName) && coutExpr.LogicOperation == LogicOp.OR;
+        return testB && testA && testZ && testM && testCout;
+    
+    }
+
 
     public static ulong Part2()
     {
@@ -294,58 +381,51 @@ class Day24
             cin & a = m
             b | m = cout
 
+            Buscar el resultado y los dos bits basicos da tres ops
+
+            x and y = b?
+            a? xor cin? = z
+            x xor y = a
+
+            cin & a = m
+            b | m = cout
+
+            => Alguna expresión tiene que tener como operador a
+                - La que calcula m
+            
+            => Alguna expreión tiene que tener como operador m y b
+                -> m y b calculan cout
+
         */
 
-        
-        operations
-            .Where(x => x.ResultIsAnyOf(["z15", "x16"]) 
-                    || x.OperandIsAnyOf(["x15", "y15", "x16", "y16"])
-                )
-            .ToList()
-            .ForEach(x => Console.WriteLine(x));
-
-        /*
-
-
-        */
-
-
-        for (int i = 15; i < 17; i++)
+        for (int i = 1; i < 44; i++)
         {
-            Dictionary<string, bool> newVariables = new(variables);
-            operations.ForEach(x => x.Executed = false);
-
-            SetInputBit(newVariables, i);
-            ExecuteInstructions(newVariables, operations);
-
-            ulong x = GetVarAsUlong(newVariables, varName: 'x');
-            ulong y = GetVarAsUlong(newVariables, varName: 'y');
-            ulong z = GetVarAsUlong(newVariables, varName: 'z');
-
-            if (z != x + y)
-            {
-                Console.WriteLine($"z: {z}, i: {i}, x: {x}, y: {y}");
-            }
+            var adder = GetAdderOperations(operations, 1);
+            Console.WriteLine("Adder bit " + i + ": " + IsValidAdder(adder!, 1));
         }
 
-
         
+        // [Indices problematicos]
+        //       ===> [11, 15, 16, 22, 23, 35]
+        // for (int i = 0; i < 45; i++)
+        // {
+        //     Dictionary<string, bool> newVariables = new(variables);
+        //     operations.ForEach(x => x.Executed = false);
+
+        //     SetInputBit(newVariables, i);
+        //     ExecuteInstructions(newVariables, operations);
+
+        //     ulong x = GetVarAsUlong(newVariables, varName: 'x');
+        //     ulong y = GetVarAsUlong(newVariables, varName: 'y');
+        //     ulong z = GetVarAsUlong(newVariables, varName: 'z');
+
+        //     if (z != x + y)
+        //     {
+        //         Console.WriteLine($"z: {z}, i: {i}, x: {x}, y: {y}");
+        //     }
+        // }
 
 
-        // SetInputBit(variables, idxOfOne: 0);
-        // ExecuteInstructions(variables, operations);
-
-        // Console.WriteLine("x: "  + GetVarAsUlong(variables, varName: 'x'));
-        // Console.WriteLine("y: "  + GetVarAsUlong(variables, varName: 'y'));
-
-        // return GetVarAsUlong(variables, varName: 'z');
-
-       
         return 0L;
-
-        // ExecuteInstructions(variables, operations);
-        
-        // return GetVarAsUlong(variables);
-
     }
 }
