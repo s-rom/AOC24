@@ -1,3 +1,5 @@
+using System.IO.Compression;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
 namespace Day24;
@@ -121,6 +123,15 @@ partial class Operation
         return false;
     }
     
+
+    public static void SwapOutput(List<Operation> operations, string out1, string out2)
+    {
+        var op1 = operations.Find(x => x.ResultIs(out1));
+        var op2 = operations.Find(x => x.ResultIs(out2));
+
+        (op2!.Op3, op1!.Op3) = (op1!.Op3, op2!.Op3);
+    }
+
 
 
     public override string ToString()
@@ -251,9 +262,8 @@ class Day24
         Dictionary<string, Operation?>? expressions = [];
         Dictionary<string, Predicate<Operation>> simpleTests = new()
         {
-            {"a", x => x.OperandIs("x"+bitStr) && x.LogicOperation == LogicOp.XOR},
-            {"b", x => x.OperandIs("x"+bitStr) && x.LogicOperation == LogicOp.AND},
-            {"z", x => x.ResultIs("z"+bitStr)},
+            {"a", o => o.OperandIs("x"+bitStr) && o.OperandIs("y"+bitStr) && o.LogicOperation == LogicOp.XOR},
+            {"b", o => o.OperandIs("x"+bitStr) && o.OperandIs("y"+bitStr) && o.LogicOperation == LogicOp.AND},
         };
 
         // x and y = b
@@ -280,9 +290,9 @@ class Day24
         var bName = expressions["b"]!.Op3; 
         var aName = expressions["a"]!.Op3;
 
+        expressions["z"] = operations.Find(x => x.ResultIs("z"+bitStr) && x.LogicOperation == LogicOp.XOR); 
         expressions["m"] = operations.Find(x => x.OperandIs(aName) && x.LogicOperation == LogicOp.AND);    
         expressions["cout"] = operations.Find(x => x.OperandIs(bName) && x.LogicOperation == LogicOp.OR);
-
 
         return expressions;
     }
@@ -329,6 +339,8 @@ class Day24
         return testB && testA && testZ && testM && testCout;
     
     }
+
+
 
 
     public static ulong Part2()
@@ -398,10 +410,38 @@ class Day24
 
         */
 
-        for (int i = 1; i < 44; i++)
+
+       
+
+
+        // Adder problematicos
+        Operation? cin = null;
+        for (int i = 1;  i < 45; i++)
         {
-            var adder = GetAdderOperations(operations, 1);
-            Console.WriteLine("Adder bit " + i + ": " + IsValidAdder(adder!, 1));
+
+            var adder = GetAdderOperations(operations, i);
+            
+            bool validAdder = IsValidAdder(adder!, i);
+
+            if (validAdder)
+            {
+                cin = adder!["cout"];
+            }
+
+
+            if (!validAdder) 
+            {
+                Console.WriteLine("\n---------------------------");
+                
+                if (cin != null) Console.WriteLine("cin: " + cin.Op3);
+                foreach (var expr in adder!.Keys)
+                {
+                    Console.WriteLine(expr + "--> " + adder[expr]);
+                }
+
+            }
+
+
         }
 
         
