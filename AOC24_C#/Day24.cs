@@ -1,5 +1,3 @@
-using System.IO.Compression;
-using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
 namespace Day24;
@@ -353,7 +351,6 @@ class Day24
         );
 
         /*
-            X(44b) + Y(44b) = Z(45b)
             ----------------------------
 
             SUM  = A XOR B XOR Cin
@@ -367,17 +364,6 @@ class Day24
             x & y = b
             cin & a = m
             b | m = cout
-
-
-            
-            x1 + y1 + c0 = z1, c1
-
-                x1 XOR y1 = tcd
-                tcd XOR bwv = z1
-
-                x1 and y1 = wqt
-                bwv AND tcd = sgv
-                wqt OR sgv = hqq (c1) 
 
         */
 
@@ -445,8 +431,7 @@ class Day24
         }
 
         
-        // [Indices problematicos]
-        //       ===> [11, 15, 16, 22, 23, 35]
+
         // for (int i = 0; i < 45; i++)
         // {
         //     Dictionary<string, bool> newVariables = new(variables);
